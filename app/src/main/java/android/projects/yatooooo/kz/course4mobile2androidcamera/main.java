@@ -35,6 +35,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.backendless.Backendless;
+import com.backendless.async.callback.AsyncCallback;
+import com.backendless.exceptions.BackendlessFault;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -43,7 +47,10 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class main extends AppCompatActivity {
@@ -172,6 +179,8 @@ public class main extends AppCompatActivity {
                             ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                             byte[] bytes = new byte[buffer.capacity()];
                             buffer.get(bytes);
+
+                            saveInDataBase(bytes);
                             save(bytes);
                         }catch (FileNotFoundException fnfe){
                             fnfe.printStackTrace();
@@ -226,6 +235,25 @@ public class main extends AppCompatActivity {
         }catch (CameraAccessException c){
 
         }
+    }
+
+    private void saveInDataBase(byte[] bytes) {
+        String name = "image_"+Calendar.getInstance().getTime().getTime();
+        Backendless.Files.saveFile( "images", name+".jpg", bytes, true );
+        HashMap<String, Object> image = new HashMap<>();
+        image.put("name", name);
+
+        Backendless.Data.of("Images").save(image, new AsyncCallback<Map>() {
+            @Override
+            public void handleResponse(Map response) {
+                Toast.makeText(getApplicationContext(), "Saved at Backendless", Toast.LENGTH_SHORT);
+            }
+
+            @Override
+            public void handleFault(BackendlessFault fault) {
+                Toast.makeText(getApplicationContext(), "Fault during saving!!!", Toast.LENGTH_SHORT);
+            }
+        });
     }
 
     private void createCameraPreview() {
